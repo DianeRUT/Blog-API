@@ -21,16 +21,15 @@ export const auth = async (
     const decoded = jwt.verify(
       token,
       process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-this-in-production'
-    ) as { id: string };
+    ) as { userId: number };
 
-    const user = await userRepository.findOne({ where: { id: decoded.id } });
+    const user = await userRepository.findOne({ where: { id: decoded.userId } });
 
     if (!user) {
       throw new Error();
     }
 
-    (req as unknown as AuthenticatedRequest).user = user;
-    (req as unknown as AuthenticatedRequest).token = token;
+    (req as unknown as AuthenticatedRequest).user = { userId: user.id };
     next();
   } catch (error) {
     res.status(401).json({ error: 'Please authenticate.' });

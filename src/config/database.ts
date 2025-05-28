@@ -1,6 +1,7 @@
 import { DataSource } from 'typeorm';
 import { User } from '../entities/User.js';
 import { Post } from '../entities/Post.js';
+import { Token } from '../entities/Token.js';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -13,8 +14,8 @@ export const AppDataSource = new DataSource({
   password: process.env.DB_PASSWORD || 'postgres',
   database: process.env.DB_DATABASE || 'blog_db',
   synchronize: process.env.NODE_ENV !== 'production', // Don't use in production
+  dropSchema: false, // Don't drop schema in development
   logging: process.env.NODE_ENV !== 'production',
-  entities: [User, Post],
-  migrations: ['src/migrations/*.ts'],
+  entities: [User, Post, Token],
   subscribers: ['src/subscribers/*.ts'],
 }); 

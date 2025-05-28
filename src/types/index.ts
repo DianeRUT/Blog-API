@@ -3,9 +3,9 @@ import { User } from '../entities/User.js';
 import { Post } from '../entities/Post.js';
 
 export interface RegisterRequest {
-  username: string;
   email: string;
   password: string;
+  name: string;
 }
 
 export interface LoginRequest {
@@ -14,12 +14,13 @@ export interface LoginRequest {
 }
 
 export interface AuthResponse {
-  user: {
-    id: string;
-    username: string;
+  token?: string;
+  user?: {
+    id: number;
     email: string;
+    name: string;
   };
-  token: string;
+  message?: string;
 }
 
 export interface CreatePostRequest {
@@ -39,12 +40,8 @@ export interface PaginatedResponse<T> {
   totalItems: number;
 }
 
-export interface AuthenticatedRequest<
-  P = any,
-  ResBody = any,
-  ReqBody = any,
-  ReqQuery = any
-> extends Request<P, ResBody, ReqBody, ReqQuery> {
-  user: User;
-  token: string;
+export interface AuthenticatedRequest extends Request {
+  user?: {
+    userId: number;
+  };
 } 

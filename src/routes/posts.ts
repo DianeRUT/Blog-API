@@ -7,18 +7,18 @@ import * as postController from '../controllers/postController.js';
 const router = Router();
 
 // Create a new post (Authors and Admins only)
-router.post('/posts', auth, checkRole([UserRole.AUTHOR, UserRole.ADMIN]), postController.createPost);
+router.post('/', auth, checkRole([UserRole.AUTHOR, UserRole.ADMIN]), postController.createPost);
 
 // Get all posts with pagination (Public)
-router.get('/posts', postController.getAllPosts);
+router.get('/', postController.getAllPosts);
 
 // Get single post by ID (Public)
-router.get('/posts/:id', postController.getPostById);
+router.get('/:id', postController.getPostById);
 
 // Update a post (Author of post or Admin only)
-router.put('/posts/:id', auth, postController.updatePost);
+router.put('/:id', auth, postController.updatePost);
 
 // Delete a post (Author of post or Admin only)
-router.delete('/posts/:id', auth, postController.deletePost);
+router.delete('/:id', auth, postController.deletePost);
 
 export default router; 

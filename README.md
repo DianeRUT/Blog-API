@@ -1,23 +1,26 @@
 # Blog API
 
-A RESTful blog API built with Node.js, Express, and PostgreSQL, featuring user authentication and CRUD operations for blog posts.
+A robust RESTful API for a blog platform built with Node.js, Express, TypeScript, and TypeORM.
 
 ## Features
 
-- User authentication with JWT
-- Password hashing with bcrypt
-- CRUD operations for blog posts
-- Pagination for post listing
-- Proper error handling
-- PostgreSQL database with Sequelize ORM
+- 🔐 User authentication with JWT
+- 👥 Role-based access control (Admin, Author, User)
+- 📝 CRUD operations for blog posts
+- 📧 Email verification system
+- 🔄 Password reset functionality
+- 🛡️ Input validation and sanitization
+- ⚡ Rate limiting for API protection
+- 📦 TypeORM for database operations
+- 🎯 TypeScript for type safety
 
 ## Prerequisites
 
 - Node.js (v14 or higher)
-- PostgreSQL
+- PostgreSQL (v12 or higher)
 - npm or yarn
 
-## Setup
+## Installation
 
 1. Clone the repository:
 ```bash
@@ -30,81 +33,107 @@ cd blog-api
 npm install
 ```
 
-3. Create a PostgreSQL database named `blog_db`
-
-4. Create a `.env` file in the root directory with the following variables:
-```
+3. Create a `.env` file in the root directory with the following variables:
+```env
 PORT=3000
-DB_NAME=blog_db
-DB_USER=postgres
-DB_PASSWORD=your_password
 DB_HOST=localhost
 DB_PORT=5432
-JWT_SECRET=your-secret-key
+DB_USERNAME=your_username
+DB_PASSWORD=your_password
+DB_NAME=blog_db
+JWT_SECRET=your_jwt_secret
+JWT_EXPIRES_IN=1d
+SMTP_HOST=smtp.example.com
+SMTP_PORT=587
+SMTP_USER=your_email
+SMTP_PASS=your_password
 ```
 
-5. Start the server:
+4. Run database migrations:
 ```bash
-# Development mode
-npm run dev
+npm run typeorm migration:run
+```
 
-# Production mode
-npm start
+5. Start the development server:
+```bash
+npm run dev
 ```
 
 ## API Endpoints
 
 ### Authentication
+- `POST /api/auth/register` - Register a new user
+- `POST /api/auth/login` - Login user
+- `POST /api/auth/verify-email` - Verify user email
+- `POST /api/auth/forgot-password` - Request password reset
+- `POST /api/auth/reset-password` - Reset password
 
-- `POST /api/register` - Register a new user
-  - Body: `{ "username": "string", "email": "string", "password": "string" }`
+### Posts
+- `GET /api/posts` - Get all posts
+- `GET /api/posts/:id` - Get post by ID
+- `POST /api/posts` - Create new post (Author/Admin only)
+- `PUT /api/posts/:id` - Update post (Author/Admin only)
+- `DELETE /api/posts/:id` - Delete post (Author/Admin only)
 
-- `POST /api/login` - Login user
-  - Body: `{ "email": "string", "password": "string" }`
+### Admin
+- `GET /api/admin/users` - Get all users (Admin only)
+- `PUT /api/admin/users/:id/role` - Update user role (Admin only)
+- `DELETE /api/admin/users/:id` - Delete user (Admin only)
 
-- `GET /api/profile` - Get user profile (requires authentication)
-  - Header: `Authorization: Bearer <token>`
+## Project Structure
 
-### Blog Posts
-
-- `POST /api/posts` - Create a new post (requires authentication)
-  - Header: `Authorization: Bearer <token>`
-  - Body: `{ "title": "string", "body": "string" }`
-
-- `GET /api/posts` - Get all posts (public)
-  - Query params: `page` (default: 1), `limit` (default: 10)
-
-- `GET /api/posts/:id` - Get single post by ID (public)
-
-- `PUT /api/posts/:id` - Update a post (requires authentication)
-  - Header: `Authorization: Bearer <token>`
-  - Body: `{ "title": "string", "body": "string" }`
-
-- `DELETE /api/posts/:id` - Delete a post (requires authentication)
-  - Header: `Authorization: Bearer <token>`
+```
+src/
+├── config/         # Configuration files
+├── controllers/    # Route controllers
+├── entities/       # TypeORM entities
+├── middlewares/    # Custom middlewares
+├── routes/         # API routes
+├── utils/          # Utility functions
+└── index.ts        # Application entry point
+```
 
 ## Error Handling
 
-The API uses standard HTTP status codes:
-- 200: Success
-- 201: Created
-- 400: Bad Request
-- 401: Unauthorized
-- 403: Forbidden
-- 404: Not Found
-- 500: Internal Server Error
+The API uses a centralized error handling system with custom `ApiError` class for consistent error responses. All errors include:
+- HTTP status code
+- Error message
+- Optional error details
 
-## Testing
+## Security Features
 
-You can test the API using tools like Postman or curl. Make sure to:
-1. Register a new user
-2. Login to get the JWT token
-3. Use the token in the Authorization header for protected routes
-
-## Security
-
-- Passwords are hashed using bcrypt
-- JWT tokens are used for authentication
-- Environment variables for sensitive data
+- JWT-based authentication
+- Password hashing with bcrypt
+- CORS enabled
+- Rate limiting
 - Input validation and sanitization
-- Proper error handling 
+- SQL injection protection (TypeORM)
+- XSS protection
+
+## Development
+
+```bash
+# Run in development mode
+npm run dev
+
+# Build for production
+npm run build
+
+# Run in production mode
+npm start
+
+# Run tests
+npm test
+```
+
+## Contributing
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details. 

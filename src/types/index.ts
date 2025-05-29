@@ -14,13 +14,15 @@ export interface LoginRequest {
 }
 
 export interface AuthResponse {
+  message?: string;
+  error?: string;
+  details?: any;
   token?: string;
   user?: {
     id: number;
     email: string;
     name: string;
   };
-  message?: string;
 }
 
 export interface CreatePostRequest {

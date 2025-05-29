@@ -19,23 +19,51 @@ export const register = async (req: Request<{}, {}, RegisterRequest>, res: Respo
     if (!parseResult.success) {
       throw new ApiError(400, 'Validation failed', parseResult.error.errors);
     }
+
     const { email, password, name } = parseResult.data;
+
+    // Check if email exists in database
     const existingUser = await userRepository.findOne({ where: { email } });
     if (existingUser) {
       throw new ApiError(400, 'Email already registered');
     }
+
+    // Create user
     const user = new User();
     user.email = email;
     user.password = await bcrypt.hash(password, 10);
     user.name = name;
     user.isEmailVerified = false;
+    
+    // Save user first
     await userRepository.save(user);
+    console.log('User saved successfully:', { userId: user.id, email: user.email });
+
+    // Create verification token
     const token = await createToken(user.id, 'verification');
-    await sendEmail(user.email, 'Verify your email', generateVerificationEmail(token));
-    res.status(201).json({ message: 'Registration successful. Please check your email to verify your account.' });
+    console.log('Verification token created:', { token });
+
+    // Send verification email
+    try {
+      await sendEmail(
+        user.email,
+        'Verify your email',
+        generateVerificationEmail(token)
+      );
+      console.log('Verification email sent successfully to:', user.email);
+    } catch (emailError) {
+      console.error('Failed to send verification email:', emailError);
+      // Don't throw error here, just log it
+    }
+
+    res.status(201).json({
+      message: 'Registration successful. Please check your email to verify your account.'
+    });
   } catch (error: any) {
-    if (error instanceof ApiError) return res.status(error.status).json({ error: error.message, details: error.details });
     console.error('Registration error:', error);
+    if (error instanceof ApiError) {
+      return res.status(error.status).json({ error: error.message, details: error.details });
+    }
     res.status(500).json({ error: 'Error during registration' });
   }
 };

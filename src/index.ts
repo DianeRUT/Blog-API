@@ -4,6 +4,8 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import { AppDataSource } from './config/database.js';
 import { errorHandler } from './middlewares/errorHandler.js';
+import { swaggerSpec } from './config/swagger.js';
+import swaggerUi from 'swagger-ui-express';
 import authRoutes from './routes/auth.js';
 import postRoutes from './routes/posts.js';
 import adminRoutes from './routes/admin.js';
@@ -17,6 +19,9 @@ const app = express();
 // Middleware
 app.use(cors());
 app.use(express.json());
+
+// Swagger Documentation
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // Routes
 app.use('/api/auth', authRoutes);

@@ -3,8 +3,7 @@ import { AppDataSource } from '../config/database.js';
 import { Token } from '../entities/Token.js';
 import { MoreThan } from 'typeorm';
 
-const TOKEN_EXPIRY = 10 * 60 * 1000; // 10 minutes in milliseconds
-
+const TOKEN_EXPIRY = 10 * 1000; // 10 seconds for token to be expired
 export const generateToken = () => {
   return crypto.randomBytes(32).toString('hex');
 };

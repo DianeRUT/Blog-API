@@ -2,6 +2,7 @@ import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateCol
 import bcrypt from 'bcryptjs';
 import { Post } from './Post.js';
 import { Token } from './Token.js';
+import { Comment } from './Comment.js';
 
 export enum UserRole {
   ADMIN = 'admin',
@@ -38,6 +39,9 @@ export class User {
 
   @OneToMany(() => Token, (token: Token) => token.user)
   tokens!: Token[];
+
+  @OneToMany(() => Comment, comment => comment.user)
+  comments!: Comment[];
 
   @CreateDateColumn()
   createdAt!: Date;

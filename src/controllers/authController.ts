@@ -257,4 +257,24 @@ export const getProfile = (async (req: Request, res: Response) => {
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
-}) as RequestHandler; 
+}) as RequestHandler;
+
+export const deleteUser = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as unknown as AuthenticatedRequest).user?.userId;
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const user = await userRepository.findOne({ where: { id: userId } });
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    await userRepository.remove(user);
+    res.json({ message: 'User deleted successfully' });
+  } catch (error: any) {
+    console.error('Delete user error:', error);
+    res.status(500).json({ error: 'Error deleting user' });
+  }
+}; 

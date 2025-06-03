@@ -3,48 +3,47 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-// Create a test transporter to verify configuration
-const testTransporter = async () => {
-  const transporter = nodemailer.createTransport({
-    service: 'gmail',  // Use Gmail service
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASSWORD
-    }
-  });
+if (!process.env.EMAIL_USER || !process.env.EMAIL_PASSWORD) {
+  console.error('Email configuration missing. Please set EMAIL_USER and EMAIL_PASSWORD in .env file');
+  process.exit(1);
+}
 
+// Create and initialize the transporter
+const transporter = nodemailer.createTransport({
+  service: 'gmail',  // Use Gmail service
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASSWORD
+  }
+});
+
+// Verify the transporter configuration
+const verifyTransporter = async () => {
   try {
     await transporter.verify();
     console.log('Email configuration is working!');
-    return transporter;
   } catch (error) {
     console.error('Email configuration error:', error);
     throw error;
   }
 };
 
-// Initialize transporter
-let transporter: nodemailer.Transporter;
-
-// Initialize the transporter when the application starts
-testTransporter()
-  .then((t) => {
-    transporter = t;
-  })
-  .catch((error) => {
-    console.error('Failed to initialize email transporter:', error);
-  });
+// Verify the transporter when the application starts
+verifyTransporter().catch((error) => {
+  console.error('Failed to verify email transporter:', error);
+  process.exit(1); // Exit if email configuration fails
+});
 
 export const sendEmail = async (to: string, subject: string, html: string) => {
   try {
-    if (!transporter) {
-      throw new Error('Email transporter not initialized');
+    if (!process.env.EMAIL_USER) {
+      throw new Error('Email configuration missing');
     }
 
     const info = await transporter.sendMail({
       from: {
         name: 'Blog API',
-        address: process.env.EMAIL_USER || ''
+        address: process.env.EMAIL_USER
       },
       to,
       subject,

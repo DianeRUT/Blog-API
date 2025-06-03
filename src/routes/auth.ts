@@ -3,6 +3,7 @@ import { auth } from '../middlewares/auth.js';
 import * as authController from '../controllers/authController.js';
 import { Request, Response } from 'express';
 import { sendEmail } from '../config/email.js';
+import { resendVerificationLimiter, loginLimiter } from '../middlewares/rateLimiter.js';
 
 const router = Router();
 
@@ -34,9 +35,80 @@ const router = Router();
  *         description: Invalid input
  */
 router.post('/register', authController.register);
+
+/**
+ * @swagger
+ * /api/auth/verify-email/{token}:
+ *   get:
+ *     summary: Verify user email
+ *     tags: [Auth]
+ *     parameters:
+ *       - in: path
+ *         name: token
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Email verified successfully
+ *       400:
+ *         description: Invalid or expired token
+ */
 router.get('/verify-email/:token', authController.verifyEmail);
+
+/**
+ * @swagger
+ * /api/auth/forgot-password:
+ *   post:
+ *     summary: Request password reset
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *     responses:
+ *       200:
+ *         description: Password reset email sent
+ *       404:
+ *         description: User not found
+ */
 router.post('/forgot-password', authController.forgotPassword);
-router.get('/reset-password', authController.getResetPasswordPage);
+
+/**
+ * @swagger
+ * /api/auth/reset-password:
+ *   post:
+ *     summary: Reset password
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - token
+ *               - password
+ *             properties:
+ *               token:
+ *                 type: string
+ *               password:
+ *                 type: string
+ *                 format: password
+ *     responses:
+ *       200:
+ *         description: Password reset successful
+ *       400:
+ *         description: Invalid or expired token
+ */
 router.post('/reset-password', authController.resetPassword);
 
 /**
@@ -65,8 +137,10 @@ router.post('/reset-password', authController.resetPassword);
  *                   $ref: '#/components/schemas/User'
  *       401:
  *         description: Invalid credentials
+ *       429:
+ *         description: Too many login attempts
  */
-router.post('/login', authController.login);
+router.post('/login', loginLimiter, authController.login);
 
 /**
  * @swagger
@@ -88,7 +162,32 @@ router.post('/login', authController.login);
  */
 router.get('/profile', auth, authController.getProfile);
 
-// Add test email endpoint
+/**
+ * @swagger
+ * /api/auth/test-email:
+ *   post:
+ *     summary: Send test email (for testing email configuration)
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *     responses:
+ *       200:
+ *         description: Test email sent successfully
+ *       400:
+ *         description: Email is required
+ *       500:
+ *         description: Failed to send test email
+ */
 router.post('/test-email', async (req: Request, res: Response) => {
   try {
     const { email } = req.body;
@@ -109,7 +208,52 @@ router.post('/test-email', async (req: Request, res: Response) => {
   }
 });
 
-// Delete user route
+/**
+ * @swagger
+ * /api/auth/delete:
+ *   delete:
+ *     summary: Delete current user account
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: User account deleted successfully
+ *       401:
+ *         description: Unauthorized
+ */
 router.delete('/delete', auth, authController.deleteUser);
+
+/**
+ * @swagger
+ * /api/auth/resend-verification:
+ *   post:
+ *     summary: Resend verification email
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *     responses:
+ *       200:
+ *         description: Verification email resent successfully
+ *       400:
+ *         description: Email is required or already verified
+ *       404:
+ *         description: User not found
+ *       429:
+ *         description: Too many requests or cooldown period active
+ *       500:
+ *         description: Error resending verification email
+ */
+router.post('/resend-verification', resendVerificationLimiter, authController.resendVerificationEmail);
 
 export default router; 

@@ -7,7 +7,7 @@ import { createToken, validateToken } from '../services/tokenService.js';
 import { sendEmail, generateVerificationEmail, generatePasswordResetEmail } from '../config/email.js';
 import bcrypt from 'bcryptjs';
 import { Token } from '../entities/Token.js';
-import { MoreThan } from 'typeorm';
+import { MoreThan, LessThan } from 'typeorm';
 import { registerSchema, loginSchema, resetPasswordSchema } from '../utils/authSchemas.js';
 import { ApiError } from '../utils/ApiError.js';
 
@@ -45,15 +45,18 @@ export const register = async (req: Request<{}, {}, RegisterRequest>, res: Respo
 
     // Send verification email
     try {
+      const emailHtml = generateVerificationEmail(token);
       await sendEmail(
         user.email,
         'Verify your email',
-        generateVerificationEmail(token)
+        emailHtml
       );
       console.log('Verification email sent successfully to:', user.email);
     } catch (emailError) {
       console.error('Failed to send verification email:', emailError);
-      // Don't throw error here, just log it
+      // Delete the user if email sending fails
+      await userRepository.remove(user);
+      throw new ApiError(500, 'Failed to send verification email. Please try again.');
     }
 
     res.status(201).json({
@@ -276,5 +279,66 @@ export const deleteUser = async (req: Request, res: Response) => {
   } catch (error: any) {
     console.error('Delete user error:', error);
     res.status(500).json({ error: 'Error deleting user' });
+  }
+};
+
+export const resendVerificationEmail = async (req: Request, res: Response) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      throw new ApiError(400, 'Email is required');
+    }
+
+    const user = await userRepository.findOne({ where: { email } });
+    if (!user) {
+      throw new ApiError(404, 'User not found');
+    }
+
+    if (user.isEmailVerified) {
+      throw new ApiError(400, 'Email is already verified');
+    }
+
+    // Check for recent verification attempts
+    const tokenRepository = AppDataSource.getRepository(Token);
+    const recentToken = await tokenRepository.findOne({
+      where: {
+        userId: user.id,
+        type: 'verification',
+        createdAt: MoreThan(new Date(Date.now() - 5 * 60 * 1000)) // 5 minutes ago
+      }
+    });
+
+    if (recentToken) {
+      const timeLeft = Math.ceil((recentToken.createdAt.getTime() + 5 * 60 * 1000 - Date.now()) / 1000);
+      throw new ApiError(429, `Please wait ${timeLeft} seconds before requesting another verification email`);
+    }
+
+    // Create new verification token
+    const token = await createToken(user.id, 'verification');
+    console.log('New verification token created:', { token });
+
+    // Send verification email
+    try {
+      const emailHtml = generateVerificationEmail(token);
+      await sendEmail(
+        user.email,
+        'Verify your email',
+        emailHtml
+      );
+      console.log('Verification email resent successfully to:', user.email);
+    } catch (emailError) {
+      console.error('Failed to resend verification email:', emailError);
+      throw new ApiError(500, 'Failed to resend verification email. Please try again.');
+    }
+
+    res.json({
+      message: 'Verification email has been resent. Please check your email.'
+    });
+  } catch (error: any) {
+    console.error('Resend verification email error:', error);
+    if (error instanceof ApiError) {
+      return res.status(error.status).json({ error: error.message, details: error.details });
+    }
+    res.status(500).json({ error: 'Error resending verification email' });
   }
 }; 

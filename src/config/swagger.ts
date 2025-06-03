@@ -85,11 +85,12 @@ const options: swaggerJsdoc.Options = {
           properties: {
             id: { type: 'integer' },
             name: { type: 'string' },
-            email: { type: 'string' },
+            email: { type: 'string', format: 'email' },
             role: { 
               type: 'string',
               enum: ['user', 'author', 'admin']
             },
+            isEmailVerified: { type: 'boolean' },
             createdAt: { type: 'string', format: 'date-time' },
             updatedAt: { type: 'string', format: 'date-time' }
           }
